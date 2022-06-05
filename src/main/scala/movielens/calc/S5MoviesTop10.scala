@@ -1,0 +1,31 @@
+package movielens.calc
+
+import movielens.framework.SilverTable
+import org.apache.spark.sql.functions.{avg, col, count, lit}
+import org.apache.spark.sql.{DataFrame, SparkSession}
+
+class S5MoviesTop10 extends SilverTable {
+  override def tableName: String = "movies_top10"
+
+  override def transform(
+      df: DataFrame
+  )(implicit spark: SparkSession): DataFrame = {
+
+    df
+      .groupBy(col("movieId"))
+      .agg(
+        avg("rating").as("avg_rating"),
+        count("userId").as("count_users")
+      )
+      .where(col("count_users") >= 5)
+      .orderBy(col("avg_rating").desc)
+
+  }
+
+  override def refresh(implicit spark: SparkSession): Unit = {
+    val ratings = S1LoadRatings.get
+    write(transform(ratings))
+  }
+}
+
+object S5MoviesTop10 extends S5MoviesTop10

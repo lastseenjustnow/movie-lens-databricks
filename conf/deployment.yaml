@@ -1,0 +1,16 @@
+environments:
+  default:
+    strict_path_adjustment_policy: true
+    jobs:
+      - name: "movie-lens-job"
+        new_cluster:
+          spark_version: "10.4.x-scala2.12"
+          node_type_id: "i3.xlarge"
+          aws_attributes:
+            first_on_demand: 1
+            availability: "SPOT"
+          num_workers: 2
+        libraries:
+          - jar: "file://target/scala-2.12/movie-lens-assembly-1.0.jar"
+        spark_jar_task:
+          main_class_name: "movielens.SparkApp"
