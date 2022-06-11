@@ -11,11 +11,9 @@ abstract class BronzeTable extends Table {
   // To scale data cleaning ops
   type DataCleanUp = DataFrame => DataFrame
   val cleanUps: List[DataCleanUp]
-
-  def readFilePath = "dbfs:/mnt/s3_movies22/"
+  def readFilePath: String = f"${conf.readFilePath}$tableName.csv"
 
   override def writeDataFormat = "delta"
-
   def schema: StructType
 
   /** Converts ALL Long types to Timestamp. Move to a package with all the cleaning tools? */
@@ -29,10 +27,12 @@ abstract class BronzeTable extends Table {
     }: _*)
   }
 
-  private def cleanUpData(initialDF: DataFrame): DataFrame =
+  private def cleanUpData(initialDF: DataFrame): DataFrame = {
+    log.info(s"Starting data cleansing for $readFilePath...")
     cleanUps.foldLeft(initialDF) { case (dataFrame, cleanUp) =>
       cleanUp(dataFrame)
     }
+  }
 
   def extract(path: String)(implicit spark: SparkSession): DataFrame = {
     val csvOptions = Map(
@@ -51,12 +51,12 @@ abstract class BronzeTable extends Table {
     Try(f) match {
       case Success(df) =>
         log.info(
-          f"Dataset was successfully read $tableName from $readFilePath"
+          f"Dataset '$tableName' was successfully read from $readFilePath"
         )
         df
-      case Failure(_) =>
+      case Failure(e) =>
         log.info(
-          f"Error was occurred while reading $tableName from $readFilePath"
+          f"Error has occurred while reading $tableName from $readFilePath. Reason: $e"
         )
         // handle exception properly
         spark.emptyDataFrame
@@ -64,8 +64,5 @@ abstract class BronzeTable extends Table {
   }
 
   override def refresh(implicit spark: SparkSession): Unit =
-    write(
-      cleanUpData(extract(readFilePath))
-    )
-
+    super.write(cleanUpData(extract(readFilePath)))
 }

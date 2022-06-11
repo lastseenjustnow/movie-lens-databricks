@@ -1,9 +1,11 @@
 #!/bin/bash
 
+DATABRICKS_WORKSPACE_URL=`cat ~/.databrickscfg | grep "azuredatabricks" | awk '{ print substr ($0, 8 ) }'`
+
 curl -n \
 -X POST -H 'Content-Type: application/json' \
 -d '{
-     "name": "S1LoadRatings",
+     "name": "MovieLens_SparkJob",
      "new_cluster": {
        "spark_version": "7.3.x-scala2.12",
        "node_type_id": "Standard_DS3_v2",
@@ -12,9 +14,9 @@ curl -n \
     "spark_submit_task": {
        "parameters": [
          "--num-executors",
-         "1",
+         "2",
          "--class",
-         "movielens.calc.S1LoadRatings",
+         "movielens.SparkApp",
          "--packages",
          "io.delta:delta-core_2.12:1.2.1",
          "--conf",
@@ -25,4 +27,4 @@ curl -n \
          "10"
       ]
     }
-}' https://adb-7869468897916071.11.azuredatabricks.net/api/2.0/jobs/create
+}' https://${DATABRICKS_WORKSPACE_URL}/api/2.0/jobs/create

@@ -1,7 +1,7 @@
 package movielens.calc
 
 import movielens.framework.SilverTable
-import org.apache.spark.sql.functions.{avg, col, count, lit}
+import org.apache.spark.sql.functions.{avg, col, count}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 class S5MoviesTop10 extends SilverTable {
@@ -12,7 +12,7 @@ class S5MoviesTop10 extends SilverTable {
   )(implicit spark: SparkSession): DataFrame = {
 
     df
-      .groupBy(col("movieId"))
+      .groupBy(col("movieId"), col("title"))
       .agg(
         avg("rating").as("avg_rating"),
         count("userId").as("count_users")
@@ -23,8 +23,19 @@ class S5MoviesTop10 extends SilverTable {
   }
 
   override def refresh(implicit spark: SparkSession): Unit = {
+    import spark.implicits._
     val ratings = S1LoadRatings.get
-    write(transform(ratings))
+    val movies = S2LoadMovies.get
+
+    write(
+      transform(
+        ratings
+          .as("l")
+          .join(movies.as("r"), $"l.movieId" === $"r.movieId")
+          .select($"l.movieId", $"title", $"rating", $"userId")
+      )
+    )
+
   }
 }
 
