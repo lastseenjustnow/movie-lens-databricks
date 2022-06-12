@@ -1,40 +1,22 @@
 package movielens.framework
 
-import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.types.{LongType, StructType, TimestampType}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{Dataset, Encoder, SparkSession}
 
 import scala.util.{Failure, Success, Try}
+import scala.reflect.runtime.universe.TypeTag
 
-abstract class BronzeTable extends Table {
+// Should I make Table class typed instead of BronzeTable? Depends on convention
+abstract class BronzeTable[T <: Product: TypeTag]
+    extends Table
+    with DataCleansing {
 
-  // To scale data cleaning ops
-  type DataCleanUp = DataFrame => DataFrame
-  val cleanUps: List[DataCleanUp]
+  implicit val encoder: Encoder[T] = org.apache.spark.sql.Encoders.product[T]
+
   def readFilePath: String = f"${conf.readFilePath}$tableName.csv"
 
   override def writeDataFormat = "delta"
-  def schema: StructType
 
-  /** Converts ALL Long types to Timestamp. Move to a package with all the cleaning tools? */
-  val epochToTimestamp: DataCleanUp = df => {
-    val cols = df.schema
-      .map(sf => (sf.name, sf.dataType))
-
-    df.select(cols.map { case (columnName, dataType) =>
-      if (dataType == LongType) col(columnName).cast(TimestampType)
-      else col(columnName)
-    }: _*)
-  }
-
-  private def cleanUpData(initialDF: DataFrame): DataFrame = {
-    log.info(s"Starting data cleansing for $readFilePath...")
-    cleanUps.foldLeft(initialDF) { case (dataFrame, cleanUp) =>
-      cleanUp(dataFrame)
-    }
-  }
-
-  def extract(path: String)(implicit spark: SparkSession): DataFrame = {
+  def extract(path: String)(implicit spark: SparkSession): Dataset[T] = {
     val csvOptions = Map(
       "header" -> "true",
       "delimiter" -> ","
@@ -43,10 +25,11 @@ abstract class BronzeTable extends Table {
     log.info(s"Reading data from $readFilePath...")
 
     lazy val f = spark.read
-      .schema(schema)
+      .schema(encoder.schema)
       .options(csvOptions)
       .format("csv")
       .load(path)
+      .as[T]
 
     Try(f) match {
       case Success(df) =>
@@ -59,10 +42,10 @@ abstract class BronzeTable extends Table {
           f"Error has occurred while reading $tableName from $readFilePath. Reason: $e"
         )
         // handle exception properly
-        spark.emptyDataFrame
+        spark.emptyDataset[T]
     }
   }
 
   override def refresh(implicit spark: SparkSession): Unit =
-    super.write(cleanUpData(extract(readFilePath)))
+    write(cleanUpData(extract(readFilePath).toDF))
 }

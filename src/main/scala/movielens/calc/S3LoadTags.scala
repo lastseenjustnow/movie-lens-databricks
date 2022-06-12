@@ -2,11 +2,8 @@ package movielens.calc
 
 import movielens.framework.BronzeTable
 import movielens.struct.Tags
-import org.apache.spark.sql.Encoders
-import org.apache.spark.sql.types.StructType
 
-class S3LoadTags extends BronzeTable {
-  override def schema: StructType = Encoders.product[Tags].schema
+class S3LoadTags extends BronzeTable[Tags] {
   override val cleanUps: List[DataCleanUp] = List(epochToTimestamp)
   override def tableName: String = "tags"
 }

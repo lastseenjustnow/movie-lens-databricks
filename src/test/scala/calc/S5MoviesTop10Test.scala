@@ -1,8 +1,7 @@
 package calc
 
-import movielens.calc.{S1LoadRatings, S2LoadMovies, S5MoviesTop10}
+import movielens.calc.S5MoviesTop10
 import movielens.struct.{Movies, Ratings}
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import utils.MovieLensTest
 import org.apache.spark.sql.functions.max
 

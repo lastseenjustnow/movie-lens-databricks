@@ -28,7 +28,8 @@ trait MovieLensTest extends WordSpec with Matchers with Spark {
   /* Read data as csv and save it in delta format*/
   def prepareDataForTest[T <: Product: TypeTag](fileName: String): String = {
     val csvData = readInputCsv[T](s"ml-latest-small/$fileName")
-    val testDeltaPath = s"/tmp/spark-output/${UUID.randomUUID()}/deltaratings/"
+    val testDeltaPath =
+      s"/tmp/spark-output/${fileName}_${UUID.randomUUID()}/deltaratings/"
     csvData.write.format("delta").save(testDeltaPath)
     testDeltaPath
   }

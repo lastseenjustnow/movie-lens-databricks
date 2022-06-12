@@ -5,12 +5,12 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.util.{Failure, Success, Try}
 
-// TODO: make typed for Datasets usage
 abstract class Table extends Logging with Configuration {
   def schemaName: String = conf.schemaName
   def tableName: String
   def qualifiedName: String = s"$schemaName.$tableName"
   def writeDataFormat: String = "delta"
+  def partitionColNames: Seq[String] = Seq()
   def deltaPath = s"${conf.deltaPath}$tableName"
   lazy val deltaTable: DeltaTable = DeltaTable.forPath(deltaPath)
 
@@ -19,14 +19,19 @@ abstract class Table extends Logging with Configuration {
 
     log.info(f"Writing $tableName to $deltaPath...")
 
-    lazy val overwrite: Unit = df.write
-      .format(writeDataFormat)
-      .mode("overwrite")
-      .option("path", f"$deltaPath")
-      .saveAsTable(f"$schemaName.$tableName")
+    lazy val dfw = {
+      df.show()
+      df.write
+        .format(writeDataFormat)
+        .mode("overwrite")
+        .partitionBy(partitionColNames: _*)
+    }
+
+    lazy val overwrite: Unit =
+      dfw.option("path", f"$deltaPath").saveAsTable(f"$schemaName.$tableName")
 
     lazy val createTable: Unit = {
-      df.write.format("delta").save(deltaPath)
+      dfw.save(deltaPath)
       val sqlQ =
         f"CREATE TABLE $qualifiedName USING DELTA LOCATION '$deltaPath'"
       log.info(s"Performing sql query: $sqlQ...")
