@@ -30,6 +30,8 @@ Deployment via utility dbx:
 dbx deploy --no-rebuild --no-package
 ```
 
+For local development Terraform & Databricks CLI should be installed.
+
 **Requirements:**
 
 0. Logical division between the staging and transformation is realized at two levels.
@@ -72,7 +74,8 @@ Requirements and improvements:
 - [ ] Abstract upserts
 - [ ] Refactor tests - objects for abstract types are impossible to create
 
-Important docs to recreate env:
+Important docs to recreate env:  
+
 **Azure Databricks:**
 Authenticate dbfs with token: https://docs.microsoft.com/en-us/azure/databricks/dev-tools/api/latest/authentication
 Copy file to dbfs: https://docs.microsoft.com/en-us/azure/databricks/dev-tools/cli/#copy-a-file-to-dbfs
