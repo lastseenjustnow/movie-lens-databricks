@@ -17,3 +17,8 @@ provider "aws" {
   profile = "AdministratorAccess-502487623068"
   region  = var.region
 }
+
+provider "databricks" {
+  // other configuration
+  account_id = "cdb29855-f207-42bd-865b-9ca3b82aa619"
+}
