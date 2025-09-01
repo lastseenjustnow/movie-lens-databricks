@@ -68,3 +68,4 @@ project/**/metals.sbt
 
 .bsp
 .terraform.lock.hcl
+*.tfstate*

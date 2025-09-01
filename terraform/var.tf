@@ -10,7 +10,12 @@ variable "databricks_external_id" {
 
 variable "databricks_aws_account_id" {
   type    = string
-  default = "414351767826" # example for us-east-1, check docs for your region
+  default = "414351767826"
+}
+
+variable "databricks_workspace_role" {
+  type    = string
+  default = "databricks-workspace-stack-ff618-role"
 }
 
 variable "region" {
@@ -23,13 +28,22 @@ variable "cluster_name" {
   default = "MovieLens cluster"
 }
 
-variable "movielens-role-name" {
+variable "movielens_role_name" {
   type    = string
   default = "s3-movielens-access-role"
 }
 
-
-variable "movielens_data" {
+variable "movielens_policy_name" {
   type    = string
-  default = "s3://movielens-databricks/movielens-data/"
+  default = "s3-movielens-full-access-policy"
+}
+
+variable "movielens_bucket" {
+  type    = string
+  default = "s3://movielens-databricks/"
+}
+
+locals {
+  movielens_data          = "${var.movielens_bucket}movielens-data/"
+  movielens_unity_catalog = "${var.movielens_bucket}movielens-unity-catalog/"
 }
