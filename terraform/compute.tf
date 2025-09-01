@@ -20,6 +20,7 @@ resource "databricks_cluster" "movielens_cluster" {
     instance_profile_arn   = aws_iam_instance_profile.s3_movielens_profile.arn
   }
   no_wait = true
+  data_security_mode = "SINGLE_USER"
   depends_on = [
     databricks_instance_profile.s3_movielens_instance_profile
   ]
